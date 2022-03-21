@@ -1,3 +1,5 @@
 temp.py
 data
 env
+src/__pycache__/*
+src/.ipynb_checkpoints

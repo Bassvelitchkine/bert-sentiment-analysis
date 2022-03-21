@@ -17,11 +17,11 @@ class Classifier:
         dataset_builder=CustomDataset,
         loader_builder=CustomDataLoader,
         criterion=nn.CrossEntropyLoss(),
-        optimizer=AdamW,
+        optimizer=torch.optim.AdamW,
         scheduler_builder=get_linear_schedule_with_warmup,
         model=BertClassifier,
         batch_size=5,
-        epochs=2,
+        epochs=4,
         **kwargs) -> None:
 
         self.device_ = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -96,6 +96,7 @@ class Classifier:
         _ = self.model_.eval()
 
         correct = .0
+        num_pred = 0
         predictions = []
         
         with torch.no_grad():
@@ -107,10 +108,11 @@ class Classifier:
 
                 outputs = self.model_(encoded_sentences, position_indexes, categories)
                 _, predicted = torch.max(outputs, 1)
-                predictions.append(int(predicted))
+                predictions.append(predicted)
                 correct += (predicted == labels).sum().item()
+                num_pred += predicted.shape[0]
 
-        accuracy = correct / len(predictions) * 100
+        accuracy = correct/num_pred * 100
         print(f"Accuracy: {accuracy: .2f}%")
 
         return predictions
@@ -140,8 +142,12 @@ class Classifier:
         _ = self.model_.eval()
         with torch.no_grad():
             predictions = self.__run_testing_epoch()
-
-        return [self.id_to_label_mapper_[prediction] for prediction in predictions]
+        
+        pred = []
+        for prediction in predictions:
+            for i in range(len(prediction)):
+                pred.append(self.id_to_label_mapper_[prediction[i].item()])
+        return pred
 
 if __name__ == "__main__":
     
